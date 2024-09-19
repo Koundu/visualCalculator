@@ -27,7 +27,6 @@ export default function Home(){
     const [latexExp, setLatexExp] = useState<Array<string>>([]);
     const [latexPosition,setLatexPosition] = useState({x:10, y:200});
     const [dictOfVars,setDictOfVars] = useState({});
-    console.log(`${import.meta.env.VITE_API_URL}`);
 
     useEffect(()=>{
         if(reset){
@@ -92,7 +91,7 @@ export default function Home(){
     },[]);
 
     const renderLatexToCanvas = (expression:string, answer:string) =>{
-        const latex = `\\(\\LARGE{${expression}=${answer}})`;
+        const latex = `\\(\\LARGE{${expression}=${answer}}\\)`;
         setLatexExp([...latexExp,latex]);
         const canvas = canvasRef.current;
         if(canvas){
@@ -109,8 +108,7 @@ export default function Home(){
         if(canvas){
             const response = await axios({
                 method:'post',
-                // url:`${import.meta.env.VITE_API_URL}/calculate`,
-                url:`http://localhost:8900/calculate`,
+                url:`${import.meta.env.VITE_API_URL}/calculate`,
                 data:{
                     image:canvas.toDataURL('image/png'),
                     dict_of_vars:dictOfVars,
