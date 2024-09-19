@@ -2,15 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import {SWATCHES} from '../../../constants';
 import { ColorSwatch, Group } from "@mantine/core";
 import { Button } from "@/components/ui/button";
-import Draggable from 'react-draggable';
+import  Draggable  from 'react-draggable';
 import axios from 'axios';
-import MathJax from 'mathjax';
 
-MathJax.start();
 
 
 interface Response{
-    latexExp: string[];
+    expr: string;
     result:string;
     assign:boolean;
 }
@@ -29,6 +27,7 @@ export default function Home(){
     const [latexExp, setLatexExp] = useState<Array<string>>([]);
     const [latexPosition,setLatexPosition] = useState({x:10, y:200});
     const [dictOfVars,setDictOfVars] = useState({});
+    console.log(`${import.meta.env.VITE_API_URL}`);
 
     useEffect(()=>{
         if(reset){
@@ -46,13 +45,15 @@ export default function Home(){
         }
     },[result])
 
-    useEffect(()=>{
-        if(latexExp.length >0 && window.MathJax){
-            setTimeout(()=>{
-                Window.MathJax.Hub.Queue(['Typescript', window.MathJax.Hub]);
-            },0)
+    useEffect(() => {
+        if (latexExp.length > 0 && window.MathJax) {
+            setTimeout(() => {
+                window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
+            }, 0);
         }
-    },[latexExp])
+    }, [latexExp]);
+
+    
 
 
     useEffect(()=>{
@@ -68,15 +69,23 @@ export default function Home(){
         }
 
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/config/TeX-MML-AM_CHTML.js';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_CHTML';
+        script.type = "text/javascript";
         script.async = true;
         document.head.appendChild(script);
 
-        script.onload = ()=>{
-            window.MathJax.Hub.Config({
-                text2jax:{inlineMath:[['$','$'],['\\(','\\)']]}
-            })
+        script.onload = () => {
+          // Configure MathJax once it's loaded
+          (window as any).MathJax.Hub.Config({
+            tex2jax: {
+              inlineMath: [['$', '$'], ['\\(', '\\)']],
+            }
+          });
+    
+          // Typeset the content after configuration
+          (window as any).MathJax.Hub.Queue(["Typeset", (window as any).MathJax.Hub]);
         };
+        document.head.appendChild(script);
         return ()=>{
             document.head.removeChild(script);
         }
@@ -96,16 +105,20 @@ export default function Home(){
 
     const sendData = async ()=>{
         const canvas = canvasRef.current;
+        
         if(canvas){
             const response = await axios({
                 method:'post',
-                url:`${import.meta.env.VITE_API_URL}/calculate`,
+                // url:`${import.meta.env.VITE_API_URL}/calculate`,
+                url:`http://localhost:8900/calculate`,
                 data:{
                     image:canvas.toDataURL('image/png'),
                     dict_of_vars:dictOfVars,
                 }
             });
             const resp = await response.data;
+            console.log('Response',response);
+            
             resp.data.forEach((data:Response)=>{
                 if(data.assign == true){
                     setDictOfVars({
@@ -137,7 +150,7 @@ export default function Home(){
                     answer:data.result
                 })
             });
-        },200)
+        },1000)
     };
     }
 
@@ -223,7 +236,7 @@ export default function Home(){
             onMouseUp={stopDrawing}
             onMouseOut={stopDrawing}
         />
-            {/* {latexExp && latexExp.map((latex, index) => (
+            {latexExp && latexExp.map((latex, index) => (
                 <Draggable
                     key={index}
                     defaultPosition={latexPosition}
@@ -233,7 +246,7 @@ export default function Home(){
                         <div className="latex-content">{latex}</div>
                     </div>
                 </Draggable>
-            ))} */}
+            ))}
         </>
     );
 }
